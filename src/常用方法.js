@@ -1,6 +1,6 @@
 import { Snackbar, Dialog } from '@varlet/ui';
 import Store from '@/store/main.js';
-import { Tenant_Id, Client_Id ,接口地址} from '@/系统常量.js';
+import { Tenant_Id, Client_Id, 接口地址 } from '@/系统常量.js';
 
 export function 消息(消息内容 = '成功', 消息颜色 = 'success') {
 	let type = 'success';
@@ -65,7 +65,7 @@ export async function 请求接口(url, ...args) {
 		if (args[0] && typeof args[0] == 'object') {
 			url += '?';
 			for (let [key, value] of Object.entries(args[0])) {
-				url += `${key}=${value}&`;
+				value && (url += `${key}=${value}&`);
 			}
 			url = url.substring(0, url.length - 1);
 		}
@@ -96,5 +96,4 @@ export async function 请求接口(url, ...args) {
 		});
 }
 
-
-export const 访问静态资源= (url) => `${接口地址}/ktv/upload/staticResources?path=${url}`;
+export const 访问静态资源 = (url) => `${接口地址}/ktv/upload/staticResources?path=${url}`;

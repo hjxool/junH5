@@ -16,7 +16,7 @@
 				<div class="视频 center" :style="全屏()">
 					<div class="以中心点旋转" @click="全屏播放条显示()" :style="旋转()">
 						<div v-show="!视频.url" class="center" style="width: 100%; height: 100%; position: absolute">
-							<img @click.stop src="/图片资源/icon/icon19.png" style="width: 60rem; height: 60rem" />
+							<img @click.stop="控制('开始播放')" src="/图片资源/icon/icon19.png" style="width: 60rem; height: 60rem" />
 						</div>
 						<video v-show="视频.url" :src="视频.url" style="width: 100%; height: 100%; position: absolute"></video>
 
@@ -91,10 +91,11 @@ import commonPage from '@/组件/通用页面.vue';
 import headStyle from '@/组件/头部样式.vue';
 import { ref, watch } from 'vue';
 import { useStore } from 'vuex';
+import { 静态文件 } from '@/Api/唱吧.js';
 
 // 属性
 const Store = useStore();
-const { 跳转, 跳转页 } = defineProps(['跳转', '跳转页']);
+const { 跳转, 跳转页 } = defineProps(['跳转', '跳转页', '视频地址']);
 const emit = defineEmits(['跳转视频']);
 const 视频 = ref({
 	url: '',
@@ -102,7 +103,7 @@ const 视频 = ref({
 	总时间: '02:12:34',
 	当前进度_横: 10, // 百分比
 	当前进度_竖: 90, // 百分比 与横向相反
-	正在播放: true,
+	正在播放: false,
 	静音: false,
 	收藏: false,
 	全屏: false,
@@ -153,7 +154,14 @@ function backToPre() {
 function 控制(type) {
 	switch (type) {
 		case '播放':
-			视频.value.正在播放 = !视频.value.正在播放;
+			if (!视频.value.url && 视频地址) {
+				// 如果首次播放 则仍需获取视频 获取成功再改变播放状态
+				静态文件(视频地址);
+				视频.value.url && (视频.value.正在播放 = true);
+			} else {
+				// 已经在播放的视频 只控制启停
+				视频.value.正在播放 = !视频.value.正在播放;
+			}
 			break;
 		case '静音':
 			视频.value.静音 = !视频.value.静音;
@@ -168,6 +176,14 @@ function 控制(type) {
 			break;
 		case '收藏':
 			视频.value.收藏 = !视频.value.收藏;
+			break;
+		case '开始播放':
+			// 如果有视频地址 则获取
+			if (视频地址) {
+				静态文件(视频地址);
+				// 获取成功后填入视频.value.url 并改变控制条的播放按钮状态
+				视频.value.url && (视频.value.正在播放 = true);
+			}
 			break;
 	}
 }

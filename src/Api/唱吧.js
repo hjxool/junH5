@@ -29,7 +29,15 @@ const 修改类型 = {
 	删除: '/ktv/song/h5/songRequestListDel',
 	置顶: '/ktv/song/h5/songRequestListTopping',
 };
-export async function 修改已点歌曲(type, id) {
-	await 请求接口(修改类型[type], 'post', { id });
+export async function 修改已点歌曲(type, args) {
+	await 请求接口(修改类型[type], 'post', args);
 	return 查询已点歌曲();
+}
+
+export function 记录点击量(id) {
+	return 请求接口(`/ktv/song/h5/recordClick/${id}`);
+}
+
+export function 静态文件(path) {
+	return 请求接口(`/ktv/upload/staticResources`, { path });
 }
