@@ -1,0 +1,96 @@
+.rowCenter {
+	display: flex;
+	justify-content: center;
+}
+
+.colLayout {
+	display: flex;
+	flex-direction: column;
+	gap: 25rem;
+}
+
+:deep(.var-tabs) {
+	background: rgba(0, 0, 0, 0);
+	/* width: 500rem; */
+}
+
+:deep(.var-tab) {
+	font-family: Microsoft YaHei;
+	/* padding: 0 100rem; */
+	font-weight: 400;
+	font-size: 24rem;
+	color: #35393d;
+}
+
+:deep(.var-field-decorator__line) {
+	display: none;
+}
+
+:deep(.var-input .var--box) {
+	width: 646rem;
+	height: 66rem;
+	background: #FFFFFF;
+	border-radius: 33rem;
+	border: 1rem solid #B6BECD;
+}
+
+:deep(.var-field-decorator__controller) {
+	width: 646rem;
+	height: 66rem;
+}
+
+:deep(.var-input__input) {
+	/* background: #ffffff; */
+	/* border-radius: 39px; */
+	font-family: Microsoft YaHei;
+	font-weight: 400;
+	font-size: 24rem;
+	color: #224460;
+	padding: 25rem;
+	/* border: 1rem solid #B6BECD; */
+}
+
+:deep(.var-field-decorator__placeholder) {
+	font-size: 26rem;
+	left: 25rem;
+}
+
+.no-select {
+	-webkit-user-select: none;
+	/* Safari */
+	-moz-user-select: none;
+	/* Firefox */
+	-ms-user-select: none;
+	/* IE10+/Edge */
+	user-select: none;
+	/* Standard */
+}
+
+.label {
+	font-family: Microsoft YaHei;
+	font-size: 30rem;
+	color: #262b2f;
+	position: relative;
+	margin-left: 20rem;
+}
+
+.required::before {
+	content: '*';
+	display: inline-block;
+	color: red;
+	position: absolute;
+	left: -20rem;
+}
+
+.遮罩 {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.3);
+	z-index: 999;
+}
+:deep(.var-sticky__wrapper){
+	left: 0;
+}
