@@ -13,12 +13,12 @@
       </headStyle>
     </template>
     <template #body>
-      <div class="sticky-example" v-if="!展开相册">
+      <div class="sticky-example" v-if="目录">
         <var-tabs elevation color="#ECECEC" active-color="#35393D" inactive-color="#7D8996" v-model:active="active"
           @change="getData()">
           <var-tab v-for="item in 分类列表" :key="item.id">{{ item.name }}</var-tab>
         </var-tabs>
-        <var-input variant="outlined" v-model="keyWords" clearable 
+        <var-input variant="outlined" v-model="keyWords" clearable
           style="margin-top: 50rem;width: 646rem;height: 66rem;margin-left: 40rem;">
           <template #prepend-icon>
             <var-icon name="magnify" />
@@ -38,10 +38,11 @@
         </div>
         <var-back-top :duration="300" :right="10" :bottom="10" />
       </div>
-      <div v-else>
-        <div class="cardlist">
+      <div v-if="展开相册">
+        <div class="cardlist" style="justify-content:flex-start;padding-left: 48rem;">
           <div style="width:100%;text-align:center;font-size:26rem" v-if="相册列表.length === 0">暂无图片</div>
-          <div v-else class="card" style="border:0" v-for="item in 相册列表" :key="item.id">
+          <div v-else class="card" style="border:0;width:196rem;height:196rem" v-for="item in 相册列表" :key="item.id"
+            @click="点击图片(item)">
             <!-- <div class="img"> -->
             <img :src="访问静态资源(item.storePath)" style="width:100%;" alt="">
             <!-- </div> -->
@@ -49,6 +50,11 @@
           </div>
         </div>
       </div>
+      <template v-if="展示图片">
+        <div class="card" style="border:0;width:720rem;height:954rem;margin-top:123rem;">
+          <img :src="访问静态资源(选中图片.storePath)" style="width:100%;" alt="">
+        </div>
+      </template>
     </template>
   </commonPage>
 
@@ -68,6 +74,8 @@ const keyWords = ref('')
 const active = ref(0)
 const 列表 = ref([])
 const 展开相册 = ref(false)
+const 展示图片 = ref(false)
+const 目录 = ref(false)
 const 相册列表 = ref([])
 const 分类列表 = ref([
   { id: 0, name: '全部' },
@@ -75,6 +83,7 @@ const 分类列表 = ref([
   { id: 2, name: '同袍同泽' },
   { id: 3, name: '生活日常' },
 ])
+const 选中图片 = ref()
 const getData = async () => {
   const body = {
     name: keyWords.value,
@@ -88,6 +97,7 @@ const getData = async () => {
 const handleClick = (item) => {
   // console.log(item.imageNumbersList);
   展开相册.value = true
+  目录.value = false
   相册列表.value = item.imageNumbersList
 }
 const 返回 = (i) => {
@@ -99,6 +109,11 @@ const 返回 = (i) => {
   } else {
     if (展开相册.value) {
       展开相册.value = false
+      目录.value = true
+    } else if (展示图片.value) {
+      展开相册.value = true
+      目录.value = false
+      展示图片.value = false
     } else {
       store.commit('setState', {
         key: '路由',
@@ -106,17 +121,24 @@ const 返回 = (i) => {
       });
     }
   }
+}
 
+const 点击图片 = (item) => {
+  // 相册列表.value = [item]
+  展示图片.value = true
+  展开相册.value = false
+  选中图片.value = item
 }
 onMounted(() => {
   getData();
+  目录.value = true
 })
 </script>
 <style lang="less" scoped>
 @import url('@/通用样式/style2.css');
 
 .sticky-example {
-  height: 100vh; // 改用视窗单位确保高度
+  height: 100%; // 改用视窗单位确保高度
   overflow: auto; // 修正滚动设置
   position: relative; // 添加定位上下文
   flex-direction: column;

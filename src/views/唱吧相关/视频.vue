@@ -15,10 +15,10 @@
 			<div>
 				<div class="视频 center" :style="全屏()">
 					<div class="以中心点旋转" @click="全屏播放条显示()" :style="旋转()">
-						<div v-show="!视频.url" class="center" style="width: 100%; height: 100%; position: absolute">
+						<div v-show="视频.首次播放" class="center" style="width: 100%; height: 100%; position: absolute">
 							<img @click.stop="控制('开始播放')" src="/图片资源/icon/icon19.png" style="width: 60rem; height: 60rem" />
 						</div>
-						<video v-show="视频.url" :src="视频.url" style="width: 100%; height: 100%; position: absolute"></video>
+						<video v-show="!视频.首次播放" id="video" :src="视频.url" style="width: 100%; height: 100%; position: absolute"></video>
 
 						<div class="弹幕容器">
 							<div class="弹幕" v-for="item in 弹幕" :style="{ top: `${item.top}%`, left: `${item.position}%` }">{{ item.label }}</div>
@@ -44,8 +44,8 @@
 
 					<div class="控制条 rowLayout">
 						<div class="rowLayout">
-							<img v-if="视频.正在播放" class="button" @click="控制('播放')" src="/图片资源/icon/icon20.png" />
-							<img v-if="!视频.正在播放" class="button" @click="控制('播放')" src="/图片资源/icon/icon21.png" />
+							<img v-if="视频.播放" class="button" @click="控制('播放')" src="/图片资源/icon/icon20.png" />
+							<img v-if="!视频.播放" class="button" @click="控制('播放')" src="/图片资源/icon/icon21.png" />
 
 							<img v-if="!视频.静音" class="button" @click="控制('静音')" src="/图片资源/icon/icon22.png" />
 							<img v-if="视频.静音" class="button" @click="控制('静音')" src="/图片资源/icon/icon23.png" />
@@ -56,7 +56,7 @@
 							<img v-if="视频.收藏" class="button" @click="控制('收藏')" src="/图片资源/icon/icon26.png" />
 						</div>
 
-						<var-button class="按钮" text outline text-color="#E73E52">原唱</var-button>
+						<!-- <var-button class="按钮" text outline text-color="#E73E52">原唱</var-button> -->
 					</div>
 				</div>
 
@@ -89,25 +89,28 @@
 <script setup>
 import commonPage from '@/组件/通用页面.vue';
 import headStyle from '@/组件/头部样式.vue';
-import { ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
-import { 静态文件 } from '@/Api/唱吧.js';
+import { 静态文件, 修改收藏 } from '@/Api/唱吧.js';
 
 // 属性
 const Store = useStore();
-const { 跳转, 跳转页 } = defineProps(['跳转', '跳转页', '视频地址']);
+const { 跳转, 跳转页, 视频地址, 歌曲id } = defineProps(['跳转', '跳转页', '视频地址', '歌曲id']);
+console.log('视频传入', 视频地址, 歌曲id);
 const emit = defineEmits(['跳转视频']);
 const 视频 = ref({
-	url: '',
-	当前时间: '00:12:34',
-	总时间: '02:12:34',
-	当前进度_横: 10, // 百分比
-	当前进度_竖: 90, // 百分比 与横向相反
-	正在播放: false,
+	// url: 视频地址 ? 静态文件(视频地址) : '',
+	url: 静态文件('/song/a15e59cc3d4f9e8caa1d7fce2c142eaf.mp4'),
+	当前时间: '00:00:00',
+	总时间: '00:00:00',
+	当前进度_横: 0, // 百分比
+	当前进度_竖: 100, // 百分比 与横向相反
+	播放: false,
 	静音: false,
 	收藏: false,
 	全屏: false,
 	全屏控制条显示: false,
+	首次播放: true,
 });
 
 const 弹幕 = ref([]);
@@ -141,6 +144,22 @@ setTimeout(() => {
 	];
 }, 500);
 
+let video;
+onMounted(() => {
+	// 获取视频总时长
+	video = document.getElementById('video');
+	video.onloadedmetadata = () => {
+		console.log('视频总时长:', video.duration, '秒');
+		视频.value.总时间 = 格式化时间(video.duration);
+	};
+	video.ontimeupdate = () => {
+		console.log('当前播放时间:', video.currentTime, '秒');
+		视频.value.当前时间 = 格式化时间(video.currentTime);
+		视频.value.当前进度_横 = Math.round((video.currentTime / video.duration) * 100);
+		视频.value.当前进度_竖 = 100 - 视频.value.当前进度_横;
+	};
+});
+
 // 方法
 function backTo() {
 	Store.commit('setState', {
@@ -151,20 +170,21 @@ function backTo() {
 function backToPre() {
 	emit('跳转视频');
 }
-function 控制(type) {
+async function 控制(type) {
+	if (!视频.value.url) return;
 	switch (type) {
 		case '播放':
-			if (!视频.value.url && 视频地址) {
-				// 如果首次播放 则仍需获取视频 获取成功再改变播放状态
-				静态文件(视频地址);
-				视频.value.url && (视频.value.正在播放 = true);
+			视频.value.播放 = !视频.value.播放;
+			视频.value.首次播放 && (视频.value.首次播放 = false);
+			if (视频.value.播放) {
+				video.play();
 			} else {
-				// 已经在播放的视频 只控制启停
-				视频.value.正在播放 = !视频.value.正在播放;
+				video.pause();
 			}
 			break;
 		case '静音':
 			视频.value.静音 = !视频.value.静音;
+			video.muted = 视频.value.静音;
 			break;
 		case '缩放':
 			视频.value.全屏 = !视频.value.全屏;
@@ -176,14 +196,11 @@ function 控制(type) {
 			break;
 		case '收藏':
 			视频.value.收藏 = !视频.value.收藏;
+			修改收藏(视频.value.收藏 ? '收藏' : '取消', 歌曲id);
 			break;
 		case '开始播放':
-			// 如果有视频地址 则获取
-			if (视频地址) {
-				静态文件(视频地址);
-				// 获取成功后填入视频.value.url 并改变控制条的播放按钮状态
-				视频.value.url && (视频.value.正在播放 = true);
-			}
+			视频.value.首次播放 = false;
+			video.play();
 			break;
 	}
 }
@@ -218,6 +235,11 @@ function 全屏播放条显示() {
 	}
 }
 function 拖动进度条(value) {
+	if (!视频.value.url) {
+		视频.value.当前进度_横 = 0;
+		视频.value.当前进度_竖 = 100;
+		return;
+	}
 	// 同步横竖值
 	if (视频.value.全屏) {
 		// 竖
@@ -226,6 +248,7 @@ function 拖动进度条(value) {
 		// 横
 		视频.value.当前进度_竖 = 100 - value;
 	}
+	video.currentTime = (视频.value.当前进度_横 / 100) * video.duration;
 }
 function 随机弹幕(type, args) {
 	if (type == 'top') {
@@ -243,6 +266,13 @@ function 随机弹幕(type, args) {
 		let speed = 最大速度 / (1 + 弹幕长度 * 影响因子);
 		return Math.round(speed * 10) / 10;
 	}
+}
+function 格式化时间(秒) {
+	// padStart是字符串方法 将不足两位的字符补0
+	let h = String(Math.floor(秒 / 3600)).padStart(2, '0');
+	let m = String(Math.floor((秒 % 3600) / 60)).padStart(2, '0');
+	let s = String(Math.floor(秒 % 60)).padStart(2, '0');
+	return `${h}:${m}:${s}`;
 }
 </script>
 

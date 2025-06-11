@@ -17,31 +17,31 @@
 					<var-tab v-for="item in 导航栏.options" :name="item">{{ item }}</var-tab>
 				</var-tabs>
 
-				<Search v-show="分类显示()" class="noShrink" @搜索事件="分类查询($event)" style="width: 90%; align-self: center; margin: 20rem 0" />
+				<Search v-show="分类显示()" class="noShrink" @搜索事件="分类查询($event)" style="width: 90%; align-self: center; margin-top: 20rem" />
 
-				<IndexBar v-if="跳转页 == '歌星点歌'" />
+				<IndexBar v-if="跳转页 == '歌星点歌'" :歌手列表="歌手列表" />
 
-				<div v-else class="flexGrow" style="overflow: hidden; padding: 0 0 20rem 20rem">
-					<div @scroll="节流加载($event)" style="overflow-x: hidden; height: 100%; padding-right: 20rem">
-						<div class="item rowLayout" v-for="item in 列表">
+				<List v-else :列表="列表" :滚动事件="节流加载">
+					<template #item="{ 列表项, 索引 }">
+						<div class="item rowLayout">
 							<div style="overflow: hidden">
-								<div class="歌名 textEllipsis">{{ item.name }}</div>
+								<div class="歌名 textEllipsis">{{ 列表项.name }}</div>
 								<div class="rowLayout 歌手">
 									<span style="margin-right: 20rem">歌手</span>
-									<span>{{ item.singerName || '暂无' }}</span>
+									<span>{{ 列表项.singerName || '暂无' }}</span>
 								</div>
 							</div>
 
 							<div class="rowLayout noShrink" style="margin-left: auto">
 								<!-- <div class="button">自唱</div> -->
-								<div class="button b2" @click="已点歌曲操作('新增', item)">点歌</div>
+								<div class="button b2" @click="已点歌曲操作('新增', 列表项)">点歌</div>
 							</div>
 						</div>
-					</div>
-				</div>
+					</template>
+				</List>
 
 				<div class="noShrink" style="position: relative; z-index: 10">
-					<Playing v-if="已点歌曲.list.length" class="正在播放" :当前播放="已点歌曲.list[0]" @跳转视频="跳转视频()" />
+					<Playing v-if="已点歌曲.list.length" :当前播放="已点歌曲.list[0]" @跳转视频="跳转视频()" @刷新="已点歌曲操作('查询')" />
 
 					<div class="底部按钮 rowLayout">
 						<var-button class="按钮" @click="显示弹幕()" type="info">弹幕</var-button>
@@ -52,7 +52,7 @@
 		</template>
 	</commonPage>
 
-	<PlayList v-show="已点歌曲.show" @show="(arg) => (已点歌曲.show = arg)" :列表="已点歌曲.list" @修改="(arg) => 已点歌曲操作(arg.type, arg)" />
+	<PlayList v-show="已点歌曲.show" @show="(arg) => (已点歌曲.show = arg)" :列表="已点歌曲.list" @修改="(arg) => 已点歌曲操作(arg.type, arg.data)" />
 
 	<var-overlay v-model:show="弹幕.show">
 		<div class="弹幕 colLayout">
@@ -68,9 +68,9 @@
 		</div>
 	</var-overlay>
 
-	<VideoPlay v-if="跳转视频播放" :跳转="跳转" :跳转页="跳转页" @跳转视频="跳转视频播放 = false" :视频地址="视频地址" />
+	<VideoPlay v-if="跳转视频播放" :跳转="跳转" :跳转页="跳转页" @跳转视频="跳转视频播放 = false" :视频地址="视频地址" :歌曲id="歌曲id" />
 
-	<var-overlay v-model:show="loading">
+	<var-overlay v-model:show="loading" @click.prevent>
 		<var-loading color="#409eff" />
 	</var-overlay>
 </template>
@@ -83,9 +83,10 @@ import IndexBar from './索引列表.vue';
 import PlayList from './已点歌曲.vue';
 import Playing from './正在播放.vue';
 import VideoPlay from './视频.vue';
+import List from '@/组件/列表容器.vue';
 import { ref } from 'vue';
 import { useStore } from 'vuex';
-import { 查询歌曲, 热门歌曲, 发送弹幕, 查询歌手, 修改已点歌曲, 查询已点歌曲, 记录点击量 } from '@/Api/唱吧.js';
+import { 查询歌曲, 热门歌曲, 发送弹幕, 查询歌手, 修改已点歌曲, 查询已点歌曲, 记录点击量, 查询收藏 } from '@/Api/唱吧.js';
 import { 节流 } from '@/Api/防抖节流.js';
 import { 消息 } from '@/常用方法';
 
@@ -149,6 +150,8 @@ const 分页 = {
 const loading = ref(false);
 const 搜索值 = ref('');
 const 视频地址 = ref('');
+const 歌曲id = ref('');
+const 歌手列表 = ref([]);
 
 初始化();
 
@@ -236,7 +239,12 @@ function 分类查询(keyWords = '') {
 			});
 			break;
 		case '歌星点歌':
-			查询歌手({ pageNum: 分页.当前页, pageSize: 分页.单页数量, ...歌曲类型[跳转页][导航栏.value.选中], keyWords: 搜索值.value }).then((res) => {
+			查询歌手({ ...歌曲类型[跳转页][导航栏.value.选中], singerName: 搜索值.value }).then((res) => {
+				歌手列表.value = res;
+			});
+			break;
+		case '个人歌库':
+			查询收藏({ pageNum: 分页.当前页, pageSize: 分页.单页数量 }).then((res) => {
 				let list = res.data || [];
 				列表.value = list;
 				分页.总条数 = res.total;
@@ -266,6 +274,8 @@ function 分类显示() {
 	switch (跳转页) {
 		case '排行点歌':
 			return false;
+		case '个人歌库':
+			return false;
 		default:
 			return true;
 	}
@@ -286,6 +296,7 @@ function 跳转视频() {
 	let t = 已点歌曲.value.list[0];
 	记录点击量(t.id);
 	视频地址.value = t.songPath || '';
+	歌曲id.value = t.id;
 }
 </script>
 
@@ -351,10 +362,6 @@ function 跳转视频() {
 				margin-left: 35rem;
 			}
 		}
-	}
-	.正在播放 {
-		position: absolute;
-		bottom: 100%;
 	}
 }
 .弹幕 {

@@ -13,7 +13,7 @@
             </headStyle>
         </template>
         <template #body>
-            <answer v-if="答题" :试题="试题"></answer>
+            <answer ref="answerRef" v-if="答题" :试题="试题" @提交答案="res => { 答题 = !res }"></answer>
             <div class="sticky-example" v-if="!答题">
                 <var-tabs elevation color="#ECECEC" active-color="#35393D" inactive-color="#7D8996"
                     v-model:active="active" @change="getData()">
@@ -40,20 +40,30 @@
                     </template>
                 </var-input>
                 <div class="cardlist">
-                    <div class="card" v-for="item in 列表" :key="item.id" @click="handleAnswer(item)">
-                        <div class="img"></div>
-                        <div class="info">
-                            <div class="status"
-                                :class="{ 'active-status': item.status === 1, 'inactive-status': item.status === 0, 'end-status': item.status === 2 }">
-                            </div>
-                            <span class="name"
-                                style="font-family: Microsoft YaHei;font-weight: 400;font-size: 26rem;color: #35393D;">{{
-                                    item.name }}</span>
-                            <span class="text">参测人员：{{ item.person }}</span>
-                            <span class="text">开始时间： {{ item.startTime }} </span>
-                            <span class="text">结束时间： {{ item.endTime }}</span>
+                    <template v-if="!列表.length">
+                        <div style="width:100%;display: flex;justify-content: center;align-items: center;">
+                            <span
+                                style="font-family: Microsoft YaHei;font-weight: 400;font-size: 26rem;color: #35393D">{{
+                                active==0?"无问卷":"无测评" }}</span>
                         </div>
-                    </div>
+                    </template>
+                    <template v-else>
+                        <div class="card" v-for="item in 列表" :key="item.id" @click="handleAnswer(item)">
+                            <div class="img"></div>
+                            <div class="info">
+                                <div class="status"
+                                    :class="{ 'active-status': item.status === 1, 'inactive-status': item.status === 0, 'end-status': item.status === 2 }">
+                                </div>
+                                <span class="name"
+                                    style="font-family: Microsoft YaHei;font-weight: 400;font-size: 26rem;color: #35393D;">{{
+                                        item.name }}</span>
+                                <span class="text">参测人员：{{ item.userName }}</span>
+                                <span class="text">开始时间： {{ item.startTime }} </span>
+                                <span class="text">结束时间： {{ item.endTime }}</span>
+                                <span class="text">是否作答：{{ item.completed ? '已作答' : '未作答' }}</span>
+                            </div>
+                        </div>
+                    </template>
                 </div>
                 <var-back-top :duration="300" :right="10" :bottom="10" />
             </div>
@@ -81,9 +91,10 @@ const submenu = ref([
 const subtab = ref({ name: '我的问卷', id: 1 });
 const 列表 = ref([]);
 const 试题 = ref([]);
+const answerRef = ref(null);
 
 
-watch(subtab, () => {
+watch(() => subtab.value, () => {
     // console.log(subtab.value);
     getData();
 });
@@ -91,12 +102,19 @@ const handleClick = (item) => {
     subtab.value = item;
 };
 const handleAnswer = (item) => {
-    console.log(item);
-    if (item.status !== 0) {
+    // console.log(item);
+    if (item.status == 1) {
+        提示框('确认开始？').then(confirm => {
+            if (confirm) {
+                getDetail(item.id);
+                答题.value = true;
+            }
+        });
+    } else if (item.status == 2) {
         getDetail(item.id);
         答题.value = true;
     } else {
-        消息('未到开始时间！',1);
+        消息('未到开始时间！', 1);
     }
 
 };
@@ -104,14 +122,10 @@ const getData = async () => {
     const body = {
         type: active.value,
         name: 关键词.value,
+        isHistory: subtab.value.id === 2 ? true : false
     }
-    await 请求接口('/ktv/questionnaire/h5/list', body).then(res => {
-        列表.value = res.data;
-        if (subtab.value.id !== 2) {
-            列表.value = res.data.filter(item => item.status !== 2);
-        } else {
-            列表.value = res.data.filter(item => item.status === 2);
-        }
+    await 请求接口(`/ktv/questionnaire/h5/getUserList`, body).then(res => {
+        列表.value = res;
     })
 };
 
@@ -121,22 +135,43 @@ const getDetail = async (id) => {
         // console.log(试题.value);
     })
 }
+const 返回首页 = () => {
+    store.commit('setState', {
+        key: '路由',
+        value: '首页'
+    });
+}
+
 const 返回 = (page) => {
     switch (page) {
         case '首页': {
-            store.commit('setState', {
-                key: '路由',
-                value: '首页'
-            });
+            if (答题.value) {
+                if (试题.value.status == 1) {
+                    answerRef.value.中途退出().then(res => {
+                        if (res) {
+                            返回首页()
+                        }
+                    });
+                } else {
+                    返回首页()
+                }
+            } else {
+                返回首页()
+            }
         } break;
         default: {
             if (答题.value) {
-                答题.value = false;
+                if (试题.value.status == 1) {
+                    answerRef.value.中途退出().then(res => {
+                        if (res) {
+                            答题.value = false;
+                        }
+                    });
+                } else {
+                    答题.value = false;
+                }
             } else {
-                store.commit('setState', {
-                    key: '路由',
-                    value: '首页'
-                });
+                返回首页()
             }
         }
     }
@@ -145,8 +180,8 @@ const 返回 = (page) => {
 // watch(() => active.value, () => {
 //     subtab.value.id = 1
 // });
-onMounted(() => {
-    getData();
+onMounted(async () => {
+    await getData();
 });
 </script>
 
@@ -154,7 +189,7 @@ onMounted(() => {
 @import '@/通用样式/style2.css';
 
 .sticky-example {
-    height: 100vh;
+    height: 100%;
     overflow: auto;
     position: relative;
     flex-direction: column;
@@ -195,12 +230,13 @@ onMounted(() => {
 
         .card {
             width: 661rem;
-            height: 271rem;
+            height: 350rem;
             background: #FFFFFF;
             border-radius: 10rem;
             border: 1rem solid #D2D2D2;
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
+            padding: 25rem;
             align-items: center;
 
             .img {
@@ -217,12 +253,12 @@ onMounted(() => {
                 width: 340rem;
                 display: flex;
                 flex-direction: column;
-                gap: 10rem;
+                gap: 15rem;
                 position: relative;
 
                 .status {
-                    top: -30rem;
-                    right: 10rem;
+                    top: -15rem;
+                    right: 5rem;
                     position: absolute;
                     width: 95rem;
                     height: 97rem;
@@ -243,11 +279,12 @@ onMounted(() => {
                 }
 
                 .text {
+                    width: 100%;
                     font-family: Microsoft YaHei;
                     font-weight: 400;
                     font-size: 22rem;
                     color: #7D8996;
-                    line-height: 36rem;
+                    // line-height: 36rem;
                 }
             }
         }

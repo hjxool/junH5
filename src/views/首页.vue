@@ -31,7 +31,7 @@ const 菜单列表 = ref([
     { id: '4', name: '宣传教学', imgurl: '/图片资源/宣传教学新.png', imgurl2: '/图片资源/宣传教学新.png' },
     { id: '5', name: '风采展示', imgurl: '/图片资源/风采展示新.png', imgurl2: '/图片资源/风采展示新.png' },
     { id: '6', name: '文化活动', imgurl: '/图片资源/文化活动新.png', imgurl2: '/图片资源/文化活动新.png' },
-    // { id: '7', name: '有声读物', imgurl: '/图片资源/有声读物.png', imgurl2: '/图片资源/有声读物2.png' },
+    { id: '7', name: '问卷测评', imgurl: '/图片资源/问卷测评新.png', imgurl2: '/图片资源/问卷测评新.png' },
     // { id: '8', name: '问卷测评', imgurl: '/图片资源/问卷测评.png', imgurl2: '/图片资源/问卷测评2.png' },
     // { id: '9', name: '信息咨询', imgurl: '/图片资源/信息咨询.png', imgurl2: '/图片资源/信息咨询2.png' },
 ])
@@ -47,7 +47,7 @@ const 点击菜单 = (item) => {
 @import url('@/通用样式/style2.css');
 
 :deep(.commonPageBody) {
-    margin-top: 50rem;
+    margin-top: 32rem;
 }
 
 :deep(.背景图) {
@@ -57,7 +57,7 @@ const 点击菜单 = (item) => {
 
 .sticky-example {
     // height: 100%;
-    overflow: scroll;
+    overflow-y: scroll;
     display: grid;
     padding: 38rem;
     grid-template-columns: repeat(2, 311rem);

@@ -1,5 +1,6 @@
 <template>
     <commonPage>
+       
         <template #header>
             <headStyle :返回事件="返回">
                 <template #title>影视节目</template>
@@ -16,7 +17,7 @@
             <div class="sticky-example">
                 <var-tabs elevation color="#ECECEC" active-color="#35393D" inactive-color="#7D8996"
                     v-model:active="active">
-                    <var-tab v-for="item in 一级分类" :key="item.categoryId">{{ item.categoryName }}</var-tab>
+                    <var-tab v-for="item in 一级分类" :key="item.typeId">{{ item.typeName }}</var-tab>
                 </var-tabs>
                 <div class="subtabs">
                     <div class="item" :style="{ color: subtab?.typeId === item.typeId ? '#35393D' : '#7D8996' }"
@@ -148,8 +149,8 @@ const getData = async () => {
     })
 }
 const 获取分类 = async () => {
-    await 请求接口('/ktv/movie/h5/categories').then(res => {
-        // console.log(res);
+    await 请求接口(`/ktv/dict/movieTypes`).then(res => {
+        console.log(res);
         一级分类.value = res
         二级分类.value = 一级分类.value[0].types
     })
@@ -171,8 +172,8 @@ onMounted(() => {
 @import '@/通用样式/style2.css';
 
 .sticky-example {
-    height: 100vh; // 改用视窗单位确保高度
-    overflow: auto; // 修正滚动设置
+    height: 100%; // 改用视窗单位确保高度
+    overflow-y: scroll; // 修正滚动设置
     position: relative; // 添加定位上下文
     flex-direction: column;
 

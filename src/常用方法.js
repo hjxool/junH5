@@ -65,7 +65,13 @@ export async function 请求接口(url, ...args) {
 		if (args[0] && typeof args[0] == 'object') {
 			url += '?';
 			for (let [key, value] of Object.entries(args[0])) {
-				value && (url += `${key}=${value}&`);
+				if (Array.isArray(value)) {
+					for (let arg of value) {
+						url += `${key}=${arg}&`;
+					}
+				} else {
+					url += `${key}=${value}&`;
+				}
 			}
 			url = url.substring(0, url.length - 1);
 		}

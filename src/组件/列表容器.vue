@@ -1,7 +1,7 @@
 <template>
 	<div class="colLayout">
 		<div class="flexGrow">
-			<div class="scroll">
+			<div class="scroll" @scroll="scroll">
 				<div v-for="(item, index) in 列表" class="行间距">
 					<slot name="item" :列表项="item" :索引="index"></slot>
 				</div>
@@ -16,7 +16,13 @@
 
 <script setup>
 // 属性
-const { 列表 } = defineProps(['列表']);
+const { 列表, 滚动事件 } = defineProps(['列表', '滚动事件']);
+
+// 方法
+let scroll = function () {};
+if (滚动事件) {
+	scroll = 滚动事件;
+}
 </script>
 
 <style lang="less" scoped>

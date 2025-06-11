@@ -30,15 +30,21 @@
                         <div class="leftbox">
                             <div class="content">{{ item.title }}</div>
                             <div class="info">{{ item.source }} </div>
-                            <div class="info">{{ item.updateTime }}
-                            </div>
+                            <div class="info">{{ item.updateTime }}</div>
                         </div>
                         <div class="img">
                             <img :src="访问静态资源(item.coverPath)" style="width:100%;height:100%" alt="">
                         </div>
                     </div>
                 </div>
-                <div v-show="展示内容" class="text-content" ref="textContent"></div>
+                <div class="detail" v-show="选中项">
+                    <div class="content">{{ 选中项?.title }}</div>
+                    <div class="info">{{ 选中项?.source }} {{ 选中项?.updateTime }}</div>
+                    <div class="img">
+                        <img :src="访问静态资源(选中项?.coverPath)" style="width:100%;height:100%" alt="">
+                    </div>
+                    <div v-show="展示内容" class="text-content" ref="textContent"></div>
+                </div>
                 <var-back-top :duration="300" :right="10" :bottom="10" />
             </div>
         </template>
@@ -61,6 +67,7 @@ const 列表数据 = ref([]);
 const 关键词 = ref('');
 const textContent = ref(null);
 const 展示内容 = ref(false);
+const 选中项 = ref(null);
 const getData = async () => {
     await 请求接口('/ktv/news/h5/list', { title: 关键词.value }).then(res => {
         // console.log(res);
@@ -78,6 +85,8 @@ const 返回 = (页面) => {
         default: {
             if (展示内容.value) {
                 展示内容.value = false;
+                选中项.value = null;
+                textContent.value.innerHTML = null
             } else {
                 store.commit('setState', {
                     key: '路由',
@@ -90,14 +99,11 @@ const 返回 = (页面) => {
 const handleClick = (item) => {
     // console.log(item.htmlContent);
     展示内容.value = true;
-    if(item.htmlContent){
+    选中项.value = item;
+    console.log(选中项.value)
+    if (item.htmlContent) {
         textContent.value.innerHTML = item.htmlContent;
-        textContent.value.style.paddingTop = "5rem"
-    }else{
-        textContent.value.innerHTML ="空空如也"
-        textContent.value.style.paddingTop = "50rem"
     }
-    
 }
 onMounted(() => {
     getData();
@@ -173,8 +179,43 @@ onMounted(() => {
     }
 }
 
-.text-content {
-    font-size: 15px;
-    overflow-y: scroll;
+.detail {
+    width: 100%;
+    padding: 54rem 49rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30rem;
+
+    .text-content {
+        width: 100%;
+        font-size: 15px;
+        overflow-y: scroll;
+    }
+
+    .content {
+        width: 100%;
+        height: 36rem;
+        font-family: Microsoft YaHei;
+        font-weight: 400;
+        font-size: 36rem;
+        color: #35393D;
+    }
+
+    .info {
+        width: 100%;
+        height: 22rem;
+        font-family: Microsoft YaHei;
+        font-weight: 400;
+        font-size: 22rem;
+        color: #7D8996;
+    }
+
+    .img {
+        width: 80%;
+        height: 300rem;
+        background: #DDDDDD;
+        border-radius: 10rem;
+    }
 }
 </style>

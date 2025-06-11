@@ -9,17 +9,17 @@
 				<template #item="{ 列表项, 索引 }">
 					<div class="item rowLayout">
 						<div>
-							<div class="歌名">{{ 列表项.歌名 }}</div>
+							<div class="歌名">{{ 列表项.name }}</div>
 							<div class="歌手 rowLayout">
 								<div style="margin-right: 20rem">歌手</div>
-								<div>{{ 列表项.歌手 }}</div>
+								<div>{{ 列表项.name || '暂无' }}</div>
 							</div>
 						</div>
 
 						<img v-show="索引 == 0" class="icon" src="/图片资源/icon/icon15.png" />
 						<div v-show="索引 > 0" class="rowLayout">
-							<div class="button center" @click.stop="$emit('修改', { type: '置顶', id: 列表项.id })">置顶</div>
-							<div class="button center" @click.stop="$emit('修改', { type: '删除', id: 列表项.id })">删除</div>
+							<div class="button center" @click.stop="$emit('修改', { type: '置顶', data: 列表项 })">置顶</div>
+							<div class="button center" @click.stop="$emit('修改', { type: '删除', data: 列表项 })">删除</div>
 						</div>
 					</div>
 				</template>

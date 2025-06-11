@@ -33,7 +33,7 @@ import FirstLoad from '@/views/首次登录.vue';
 import Login from '@/views/登录.vue';
 import SingCamp from '@/views/唱吧相关/唱吧.vue';
 import Books from '@/views/学习+图书+有声.vue';
-import cultureActivity from "@/views/文化活动.vue"
+import cultureActivity from '@/views/文化活动.vue';
 
 import { computed } from 'vue';
 import { 获取地址栏参数 } from '@/api/获取地址栏参数.js';
@@ -47,11 +47,6 @@ store.commit('setState', {
 	key: '路由',
 	value: '首次登录',
 });
-// const store = useStore();
-// store.commit('setState', {
-// 	key: '路由',
-// 	value: '陆军风采'
-// });
 
 rem();
 window.onresize = () => {
