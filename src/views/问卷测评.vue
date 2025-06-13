@@ -44,7 +44,7 @@
                         <div style="width:100%;display: flex;justify-content: center;align-items: center;">
                             <span
                                 style="font-family: Microsoft YaHei;font-weight: 400;font-size: 26rem;color: #35393D">{{
-                                active==0?"无问卷":"无测评" }}</span>
+                                    active == 0 ? "无问卷" : "无测评" }}</span>
                         </div>
                     </template>
                     <template v-else>
@@ -101,15 +101,28 @@ watch(() => subtab.value, () => {
 const handleClick = (item) => {
     subtab.value = item;
 };
-const handleAnswer = (item) => {
+const handleAnswer = async (item) => {
     // console.log(item);
     if (item.status == 1) {
-        提示框('确认开始？').then(confirm => {
-            if (confirm) {
-                getDetail(item.id);
-                答题.value = true;
-            }
-        });
+        await getDetail(item.id)
+        console.log(试题.value);
+        if (试题.value.onGoing) {
+            提示框('继续答题？').then(confirm => {
+                if (confirm) {
+                    答题.value = true;
+                    // getDetail(item.id);
+                }
+            })
+        } else {
+            提示框('确认开始？').then(async confirm => {
+                if (confirm) {
+                    await 开始答题(item.id)
+                    // getDetail(item.id);
+                    答题.value = true;
+                }
+            });
+        }
+
     } else if (item.status == 2) {
         getDetail(item.id);
         答题.value = true;
@@ -129,6 +142,11 @@ const getData = async () => {
     })
 };
 
+const 开始答题 = async (id) => {
+    await 请求接口(`/ktv/questionnaire/h5/start/${id}`, 'post').then(res => {
+        console.log(res);
+    })
+}
 const getDetail = async (id) => {
     await 请求接口(`/ktv/questionnaire/h5/getQuestionnaireById/${id}`).then(res => {
         试题.value = res;

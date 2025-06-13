@@ -86,8 +86,8 @@ import commonPage from '@/组件/通用页面.vue';
 import headStyle from '@/组件/头部样式.vue';
 import { 请求接口, 消息 } from '@/常用方法.js';
 import { useStore } from 'vuex';
-
 import { ref } from 'vue';
+import { 连接WebSocket } from '@/Api/连接WebSocket.js';
 
 // 属性
 const Store = useStore();
@@ -129,6 +129,9 @@ async function 登录() {
 			// 写缓存
 			window.sessionStorage.账号 = 表单.value.账号;
 			window.sessionStorage.密码 = 表单.value.密码;
+			setTimeout(() => {
+				连接WebSocket();
+			}, 300);
 		}
 	} else {
 		消息('账号密码不能为空或带有空格', 1);

@@ -19,7 +19,7 @@
         </div>
         <div v-if="currentQuestion" class="question-container">
             <h3>{{ 试题类型[currentQuestion.type] }}</h3>
-            <h3 style="position:absolute;top:0;right:58rem">{{ currentQuestionIndex + 1 }}/{{ questionCount }} </h3> 
+            <h3 style="position:absolute;top:0;right:58rem">{{ currentQuestionIndex + 1 }}/{{ questionCount }} </h3>
             <h3>{{ currentQuestion.name }}</h3>
 
             <template v-if="试题.status !== 2">
@@ -259,7 +259,7 @@ const submitAnswer = async () => {
         // console.log(confirm);
         if (confirm) {
             loading.value = true;
-            await 请求接口(`/ktv/answer/h5/save`, 'post', 答案列表.value).then(res => {
+            await 请求接口(`/ktv/questionnaire/h5/setCacheSubmit/${props.试题.id}`, 'post', 答案列表.value).then(res => {
                 setTimeout(() => {
                     emit('提交答案', true);
                     // console.log('提交成功');
@@ -269,14 +269,16 @@ const submitAnswer = async () => {
         }
     });
 }
-
+const 自动缓存 = async () => {
+    await 请求接口(`/ktv/questionnaire/h5/setCacheSubmit/${props.试题.id}`, 'post', 答案列表.value);
+}
 const 中途退出 = () => {
     return new Promise(async (resolve) => {
         提示框('确认中途退出？将自动提交答案！').then(async (confirm) => {
             if (confirm) {
                 loading.value = true;
                 try {
-                    await 请求接口(`/ktv/answer/h5/save`, 'post', 答案列表.value);
+                    await 请求接口(`/ktv/questionnaire/h5/setCacheSubmit/${props.试题.id}`, 'post', 答案列表.value);
                     setTimeout(() => {
                         emit('提交答案', true);
                         loading.value = false;
@@ -292,6 +294,41 @@ const 中途退出 = () => {
         });
     });
 }
+
+const 获取用户缓存的测评数据 = async () => {
+    try {
+        const res = await 请求接口(`/ktv/questionnaire/h5/getCacheSubmit/${props.试题.id}`);
+        if (res.data?.length > 0) {
+            答案列表.value = res.data.map(item => ({
+                ...item,
+                bizUserAnswers: item.bizUserAnswers || []
+            }));
+            // 自动跳转到上次未完成的题目
+            const lastAnsweredIndex = 答案列表.value.findIndex(
+                ans => ans.bizUserAnswers?.length > 0
+            );
+            if (lastAnsweredIndex > -1) {
+                currentQuestionIndex.value = lastAnsweredIndex;
+            }
+            loadCurrentQuestion();
+        }
+    } catch (error) {
+        console.error('获取缓存数据失败:', error);
+    }
+};
+
+const 获取缓存测评结束时间 = async () => {
+    await 请求接口(`/ktv/questionnaire/h5/getCacheTimeout/${props.试题.id}`).then(res => {
+        console.log(res);
+        const targetDate = new Date(res);
+        const currentDate = new Date();
+        let timeDifference = targetDate - currentDate;
+
+        倒计时.value = Math.floor(timeDifference / 1000);
+        console.log(倒计时.value);
+    })
+}
+
 // 答案选择方法
 const selectSingleAnswer = (value, optionNumberId) => {
     const answerObj = getAnswerObject(currentQuestion.value.id);
@@ -399,14 +436,21 @@ const startCountdown = () => {
         if (timer.value) {
             clearInterval(timer.value);
         }
-
+        let num = 0
         timer.value = setInterval(() => {
             if (倒计时.value > 0) {
                 倒计时.value--;
+                num++
+                if (num == 20) {
+                    自动缓存()
+                } else {
+                    num = 0
+                }
                 // console.log('倒计时:', 倒计时.value);
             } else {
                 clearInterval(timer.value);
                 submitAnswer();
+                num = 0
             }
         }, 1000);
     }
@@ -415,8 +459,15 @@ const startCountdown = () => {
 // 监听props变化，加载试题
 watch(() => props.试题, async () => {
     if (props.试题.id) {
+        console.log('试题id变化:', props.试题);
         await 查询试题列表();
+        if (props.试题.onGoing) {
+            await 获取用户缓存的测评数据()
+        }
+
+        await 获取缓存测评结束时间()
         if (props.试题.status !== 2) {
+            // 倒计时.value = props.试题.duration * 60
             startCountdown();
         }
     }
@@ -427,17 +478,14 @@ watch(() => 倒计时.value, (newVal) => {
     if (newVal && newVal <= 0) {
         submitAnswer();
     }
-}, { immediate: true });
+});
 
 defineExpose({
     中途退出
 });
 
 onMounted(() => {
-    // console.log('组件挂载完成');
-    if (props.试题.status !== 2) {
-        倒计时.value = props.试题.duration * 60
-    }
+    console.log('组件挂载完成', props.试题.id);
 
 });
 onUnmounted(() => {

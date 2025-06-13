@@ -19,8 +19,8 @@ export function 发送弹幕(msg) {
 	return 请求接口(`/ktv/song/h5/sendComment?comment=${msg}`, 'post');
 }
 
-export function 查询已点歌曲() {
-	return 请求接口('/ktv/song/h5/songRequestListGet');
+export function 查询已点歌曲(筛选条件) {
+	return 请求接口('/ktv/song/h5/getChooseSongPageList', 筛选条件);
 }
 
 const 修改类型 = {
@@ -28,9 +28,8 @@ const 修改类型 = {
 	删除: '/ktv/song/h5/songRequestListDel',
 	置顶: '/ktv/song/h5/songRequestListTopping',
 };
-export async function 修改已点歌曲(type, args) {
-	await 请求接口(修改类型[type], 'post', args);
-	return 查询已点歌曲();
+export function 修改已点歌曲(type, args) {
+	return 请求接口(修改类型[type], 'post', args);
 }
 
 export function 记录点击量(id) {

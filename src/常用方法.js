@@ -77,24 +77,50 @@ export async function 请求接口(url, ...args) {
 		}
 	}
 	return fetch(`${运维配置_接口地址}${url}`, options)
-		.then((res) => res.json())
-		.then(({ head: { code, message }, data }) => {
-			switch (code) {
-				case 200:
-					return data;
-				case 401:
-					消息('登录失效', 3);
-					setTimeout(() => {
-						Store.commit('setState', {
-							key: '路由',
-							value: '登录',
-						});
-					}, 1000);
-					return false;
-				default:
-					提示框(message);
-					return false;
-			}
+		//.then((res) => res.json())
+		// .then(({ head: { code, message }, data }) => {
+		// 	switch (code) {
+		// 		case 200:
+		// 			return data;
+		// 		case 401:
+		// 			消息('登录失效', 3);
+		// 			setTimeout(() => {
+		// 				Store.commit('setState', {
+		// 					key: '路由',
+		// 					value: '登录',
+		// 				});
+		// 			}, 1000);
+		// 			return false;
+		// 		default:
+		// 			提示框(message);
+		// 			return false;
+		// 	}
+		// })
+		.then((res) => {
+			const contentType = res.headers.get('Content-Type')?.toLowerCase();
+		    if (contentType?.includes('application/json')) {
+		        return res.json(); // JSON响应解析为对象
+		    } else {
+		        return res.text(); // 其他类型（如文本）直接返回文本
+		    }
+		})
+		.then((data) => {
+			if (typeof data === 'object' && data.head) {
+		        switch (data.head.code) {
+		    	    case 200:
+		    	        return data.data; 
+		    	    case 401:
+		    	        消息('登录失效', 3);
+		    	        setTimeout(() => Store.commit('setState', { key: '路由', value: '登录' }), 1000);
+		    	        return false;
+		    	    default:
+		    	        提示框(data.head.message);
+		    	        return false;
+		        }
+		    } else {
+		      // 非结构化响应（如纯文本）直接返回
+		      return data;
+		    }
 		})
 		.catch((err) => {
 			消息(err, 1);

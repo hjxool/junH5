@@ -89,7 +89,7 @@
 <script setup>
 import commonPage from '@/组件/通用页面.vue';
 import headStyle from '@/组件/头部样式.vue';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import { 静态文件, 修改收藏 } from '@/Api/唱吧.js';
 
@@ -115,6 +115,7 @@ const 视频 = ref({
 
 const 弹幕 = ref([]);
 let 弹幕计时器 = null;
+// 监听弹幕列表变化 控制弹幕移动
 watch(弹幕, (newValue, oldValue) => {
 	if (!oldValue.length && newValue.length) {
 		// 从没弹幕到有弹幕 只添加一次计时器
@@ -136,13 +137,23 @@ watch(弹幕, (newValue, oldValue) => {
 		clearInterval(弹幕计时器);
 	}
 });
-setTimeout(() => {
-	弹幕.value = [
-		{ label: '111', top: 随机弹幕('top'), position: 100, speed: 随机弹幕('speed', '111') },
-		{ label: '222222', top: 随机弹幕('top'), position: 100, speed: 随机弹幕('speed', '222222') },
-		{ label: '3333333333按时递交世界第哦啊就是丢i掉', top: 随机弹幕('top'), position: 100, speed: 随机弹幕('speed', '3333333333按时递交世界第哦啊就是丢i掉') },
-	];
-}, 500);
+// 监听websocket消息 装填到弹幕列表
+const websocket消息 = computed(() => Store.state.websocket消息);
+watch(
+	() => websocket消息.value,
+	(value) => {
+		if (value) {
+			if (value.type == 'biz_ktv_song_type') {
+				弹幕.value.push({
+					label: value.content,
+					top: 随机弹幕('top'),
+					position: 100,
+					speed: 随机弹幕('speed', value.content),
+				});
+			}
+		}
+	}
+);
 
 let video;
 onMounted(() => {

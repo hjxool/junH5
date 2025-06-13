@@ -7,6 +7,7 @@ export default createStore({
 			token: '',
 			query参数: null,
 			路由: '',
+			websocket消息: null,
 		};
 	},
 	mutations: {

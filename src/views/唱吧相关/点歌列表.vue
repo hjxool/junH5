@@ -13,11 +13,11 @@
 
 		<template #body>
 			<div class="body colLayout">
-				<var-tabs v-if="导航栏.options.length" class="noShrink" v-model:active="导航栏.选中" @change="切换列表($event)" color="transparent" inactive-color="#7D8996">
+				<var-tabs v-if="导航栏.options.length" class="noShrink" v-model:active="导航栏.选中" @change="分类查询(1, 搜索值)" color="transparent" inactive-color="#7D8996">
 					<var-tab v-for="item in 导航栏.options" :name="item">{{ item }}</var-tab>
 				</var-tabs>
 
-				<Search v-show="分类显示()" class="noShrink" @搜索事件="分类查询($event)" style="width: 90%; align-self: center; margin-top: 20rem" />
+				<Search v-show="分类显示()" class="noShrink" @搜索事件="分类查询(1, $event)" style="width: 90%; align-self: center; margin-top: 20rem" />
 
 				<IndexBar v-if="跳转页 == '歌星点歌'" :歌手列表="歌手列表" />
 
@@ -34,14 +34,14 @@
 
 							<div class="rowLayout noShrink" style="margin-left: auto">
 								<!-- <div class="button">自唱</div> -->
-								<div class="button b2" @click="已点歌曲操作('新增', 列表项)">点歌</div>
+								<div class="button b2" @click="修改已点歌曲('新增', { songId: 列表项.id })">点歌</div>
 							</div>
 						</div>
 					</template>
 				</List>
 
 				<div class="noShrink" style="position: relative; z-index: 10">
-					<Playing v-if="已点歌曲.list.length" :当前播放="已点歌曲.list[0]" @跳转视频="跳转视频()" @刷新="已点歌曲操作('查询')" />
+					<Playing v-if="已点歌曲.list.length" :当前播放="已点歌曲.list[0]" @跳转视频="跳转视频()" @刷新="已点歌曲查询()" />
 
 					<div class="底部按钮 rowLayout">
 						<var-button class="按钮" @click="显示弹幕()" type="info">弹幕</var-button>
@@ -52,7 +52,15 @@
 		</template>
 	</commonPage>
 
-	<PlayList v-show="已点歌曲.show" @show="(arg) => (已点歌曲.show = arg)" :列表="已点歌曲.list" @修改="(arg) => 已点歌曲操作(arg.type, arg.data)" />
+	<PlayList
+		v-if="已点歌曲.show"
+		@show="(arg) => (已点歌曲.show = arg)"
+		@列表事件="
+			(arg) => {
+				已点歌曲.list = arg;
+			}
+		"
+	/>
 
 	<var-overlay v-model:show="弹幕.show">
 		<div class="弹幕 colLayout">
@@ -196,16 +204,12 @@ function 初始化() {
 		case '个人歌库':
 			break;
 	}
-	分类查询();
-	已点歌曲操作('查询');
+	分类查询(1);
+	已点歌曲查询();
 }
 function 显示弹幕() {
 	弹幕.value.show = true;
 	弹幕.value.input = '';
-}
-function 切换列表() {
-	分页.当前页 = 1;
-	分类查询(搜索值.value);
 }
 function 滚动加载({ target }) {
 	// 触底判断
@@ -213,13 +217,13 @@ function 滚动加载({ target }) {
 		console.log('加载');
 		// 判断是否还有下一页可以加载
 		if (分页.当前页 < 分页.总条数) {
-			分页.当前页++;
-			分类查询();
+			分类查询(++分页.当前页, 搜索值.value);
 		}
 	}
 }
 const 节流加载 = 节流(滚动加载, 500);
-function 分类查询(keyWords = '') {
+function 分类查询(page, keyWords = '') {
+	分页.当前页 = page;
 	搜索值.value = keyWords;
 	loading.value = true;
 	switch (跳转页) {
@@ -233,7 +237,11 @@ function 分类查询(keyWords = '') {
 		case '嘹亮军歌':
 			查询歌曲({ pageNum: 分页.当前页, pageSize: 分页.单页数量, ...歌曲类型[跳转页], keyWords: 搜索值.value }).then((res) => {
 				let list = res.data || [];
-				列表.value = list;
+				if (分页.当前页 == 1) {
+					列表.value = list;
+				} else {
+					列表.value.push(...list);
+				}
 				分页.总条数 = res.total;
 				loading.value = false;
 			});
@@ -246,7 +254,11 @@ function 分类查询(keyWords = '') {
 		case '个人歌库':
 			查询收藏({ pageNum: 分页.当前页, pageSize: 分页.单页数量 }).then((res) => {
 				let list = res.data || [];
-				列表.value = list;
+				if (分页.当前页 == 1) {
+					列表.value = list;
+				} else {
+					列表.value.push(...list);
+				}
 				分页.总条数 = res.total;
 				loading.value = false;
 			});
@@ -254,20 +266,25 @@ function 分类查询(keyWords = '') {
 		default:
 			查询歌曲({ pageNum: 分页.当前页, pageSize: 分页.单页数量, ...歌曲类型[跳转页][导航栏.value.选中], keyWords: 搜索值.value }).then((res) => {
 				let list = res.data || [];
-				列表.value = list;
+				if (分页.当前页 == 1) {
+					列表.value = list;
+				} else {
+					列表.value.push(...list);
+				}
 				分页.总条数 = res.total;
 				loading.value = false;
 			});
 			break;
 	}
 }
-function 保存弹幕(msg) {
+async function 保存弹幕(msg) {
 	if (!msg) {
 		消息('内容不能为空', 4);
 		return;
 	}
-	发送弹幕(msg);
-	消息('发送成功');
+	let res = await 发送弹幕(msg);
+	console.log('res', res);
+	res && 消息('发送成功');
 	弹幕.value.show = false;
 }
 function 分类显示() {
@@ -280,23 +297,18 @@ function 分类显示() {
 			return true;
 	}
 }
-async function 已点歌曲操作(type, args) {
-	loading.value = true;
-	let res;
-	if (type == '查询') {
-		res = await 查询已点歌曲();
-	} else {
-		res = await 修改已点歌曲(type, args);
-	}
-	loading.value = false;
-	已点歌曲.value.list = res || [];
-}
 function 跳转视频() {
 	跳转视频播放.value = true;
 	let t = 已点歌曲.value.list[0];
-	记录点击量(t.id);
+	记录点击量(t.songId);
 	视频地址.value = t.songPath || '';
-	歌曲id.value = t.id;
+	歌曲id.value = t.songId;
+}
+function 已点歌曲查询() {
+	查询已点歌曲({ pageNum: 1, pageSize: 1 }).then((res) => {
+		let list = res.data || [];
+		已点歌曲.value.list = list;
+	});
 }
 </script>
 

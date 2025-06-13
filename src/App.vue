@@ -14,8 +14,11 @@
 			<Books v-else-if="路由 === '宣传教学'" :跳转页="'宣传教学'" />
 			<Books v-else-if="路由 === '图书杂志'" :跳转页="'图书杂志'" />
 			<Books v-else-if="路由 === '有声读物'" :跳转页="'有声读物'" />
+			<dataChapter v-else-if="路由 === '资料章节'" />
 			<cultureActivity v-else-if="路由 === '文化活动'" />
 			<empty v-else />
+
+			<ScrollBar />
 		</TransitionGroup>
 	</div>
 </template>
@@ -34,9 +37,11 @@ import Login from '@/views/登录.vue';
 import SingCamp from '@/views/唱吧相关/唱吧.vue';
 import Books from '@/views/学习+图书+有声.vue';
 import cultureActivity from '@/views/文化活动.vue';
+import dataChapter from '@/views/资料章节.vue';
+import ScrollBar from '@/组件/滚动显示消息.vue';
 
 import { computed } from 'vue';
-import { 获取地址栏参数 } from '@/api/获取地址栏参数.js';
+import { 获取地址栏参数 } from '@/Api/获取地址栏参数.js';
 import { rem } from '@/Api/根节点字体大小.js';
 import { useStore } from 'vuex';
 

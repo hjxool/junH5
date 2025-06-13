@@ -27,7 +27,7 @@
                     <div class="info">
                         <div class="label">{{ movie.movieName }} </div>
                         <div class="text">{{ movie.keyWords }}</div>
-                        <div class="text">影视时长：{{ }}</div>
+                        <div class="text">影视时长：{{ movie.totalDuration }}</div>
                         <var-button class="btn" type="primary" size="large" @click="handlePlay(0)"></var-button>
                     </div>
                 </div>
@@ -67,6 +67,7 @@ const store = useStore();
 // store.commit('setState', {
 // 	路由: '陆军风采',
 // });
+const routeFrom = ref(store.state.路由来源)
 const movie = ref(computed(() => store.state.电影))
 const play = ref(false);
 const staticResourcesPath = "/ktv/upload/staticResources?path="
@@ -103,10 +104,17 @@ const 返回 = (路由) => {
                 播放索引.value = null
                 videoPlayer.value.stopVideo();
             } else {
-                store.commit('setState', {
-                    key: '路由',
-                    value: '影视节目',
-                });
+                if(routeFrom.value == '宣传教学') {
+                    store.commit('setState', {
+                       key: '路由',
+                       value: '宣传教学',
+                    });
+                } else {
+                    store.commit('setState', {
+                       key: '路由',
+                       value: '影视节目',
+                    });
+                }
                 videoPlayer.value.stopVideo();
             }
         }
@@ -126,7 +134,9 @@ const getDetail = async () => {
 
 onMounted(() => {
     // console.log(movie.value);
-    getDetail();
+    if(routeFrom.value == undefined) {
+        getDetail();
+    }
 })
 </script>
 <style lang="less" scoped>
